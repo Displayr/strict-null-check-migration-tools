@@ -104,13 +104,17 @@ interface TSConfig {
  * --strictNullChecks.
  */
 export async function getCheckedFiles(tsconfigPath: string, srcRoot: string): Promise<Set<string>> {
-  const tsconfig = JSON5.parse(fs.readFileSync(tsconfigPath).toString()) as TSConfig
+  const tsconfig = JSON5.parse(fs.readFileSync(path.normalize(tsconfigPath)).toString()) as TSConfig
+
+  const include = tsconfig.include || [];
+  const exclude = tsconfig.exclude || [];
+  const files = tsconfig.files || [];
 
   const set = new Set<string>();
 
-  await Promise.all(tsconfig.include.map(file => {
+  await Promise.all(include.map(entry => {
     return new Promise<void>((resolve, reject) => {
-      glob(path.join(srcRoot, file), (err, files) => {
+      glob(path.join(srcRoot, entry), { windowsPathsNoEscape: true }, (err, files) => {
         if (err) {
           return reject(err)
         }
@@ -125,9 +129,9 @@ export async function getCheckedFiles(tsconfigPath: string, srcRoot: string): Pr
     });
   }));
 
-  await Promise.all(tsconfig.exclude.map(file => {
+  await Promise.all(exclude.map(entry => {
     return new Promise<void>((resolve, reject) => {
-      glob(path.join(srcRoot, file), (err, files) => {
+      glob(path.join(srcRoot, entry), { windowsPathsNoEscape: true }, (err, files) => {
         if (err) {
           return reject(err)
         }
@@ -140,7 +144,7 @@ export async function getCheckedFiles(tsconfigPath: string, srcRoot: string): Pr
     });
   }));
 
-  (tsconfig.files || []).forEach(include => {
+  (files || []).forEach(include => {
     if (considerFile(include)) {
       set.add(path.join(srcRoot, include))
     }

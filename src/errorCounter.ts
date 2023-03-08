@@ -15,17 +15,22 @@ export class ErrorCounter {
     this.tsconfigCopyPath = this.tsconfigPath + `copy${Math.floor(Math.random() * (1 << 16))}.json`
 
     // Make a copy of tsconfig because we're going to keep modifying it.
-    execSync(`cp ${this.tsconfigPath} ${this.tsconfigCopyPath}`)
+    execSync(`shx cp ${this.tsconfigPath} ${this.tsconfigCopyPath}`)
     this.originalConfig = JSON5.parse(fs.readFileSync(this.tsconfigCopyPath).toString())
 
     // Opens TypeScript in watch mode so that it can (hopefully) incrementally
     // compile as we add and remove files from the whitelist.
-    this.tscProcess = spawn('node_modules/typescript/bin/tsc', ['-p', this.tsconfigCopyPath, '--watch', '--noEmit'])
+    this.tscProcess = spawn(
+      'node_modules/typescript/bin/tsc', 
+      ['-p', this.tsconfigCopyPath, '--watch', '--noEmit'],
+      {
+        shell: true,
+      })
   }
 
   public end(): void {
     this.tscProcess.kill()
-    execSync(`rm ${this.tsconfigCopyPath}`)
+    execSync(`shx rm ${this.tsconfigCopyPath}`)
   }
 
   public async tryCheckingFile(relativeFilePath: string): Promise<number> {
