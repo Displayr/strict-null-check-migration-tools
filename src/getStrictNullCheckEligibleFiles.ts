@@ -21,8 +21,9 @@ function hasUncheckedImport(file: string, importsTracker: ImportTracker, checked
 }
 
 export function forEachFileInSrc(srcRoot: string): Promise<string[]> {
+  const pattern = path.join(srcRoot, 'src', '**/*.ts?(x)');
   return new Promise((resolve, reject) => {
-    glob(`${srcRoot}/**/*.ts?(x)`, (err, files) => {
+    glob(pattern, { windowsPathsNoEscape: true }, (err, files) => {
       if (err) {
         return reject(err)
       }
@@ -43,12 +44,14 @@ export async function listStrictNullCheckEligibleFiles(
   const importsTracker = new ImportTracker(srcRoot)
 
   const files = await forEachFileInSrc(srcRoot)
-  return files.filter(file => {
-    if (checkedFiles.has(file)) {
-      return false
-    }
-    return !hasUncheckedImport(file, importsTracker, checkedFiles)
-  })
+  return files
+      .map(file => path.relative(srcRoot, file))
+      .filter(file => {
+        if (checkedFiles.has(file)) {
+          return false
+        }
+        return !hasUncheckedImport(file, importsTracker, checkedFiles)
+      })
 }
 
 /**
@@ -121,7 +124,7 @@ export async function getCheckedFiles(tsconfigPath: string, srcRoot: string): Pr
 
         for (const file of files) {
           if (considerFile(file)) {
-            set.add(file)
+            set.add(path.relative(srcRoot, file))
           }
         }
         resolve()
@@ -137,16 +140,16 @@ export async function getCheckedFiles(tsconfigPath: string, srcRoot: string): Pr
         }
 
         for (const file of files) {
-          set.delete(file)
+          set.delete(path.relative(srcRoot, file))
         }
         resolve()
       })
     });
   }));
 
-  (files || []).forEach(include => {
-    if (considerFile(include)) {
-      set.add(path.join(srcRoot, include))
+  (files || []).forEach(entry => {
+    if (considerFile(entry)) {
+      set.add(entry)
     }
   });
 

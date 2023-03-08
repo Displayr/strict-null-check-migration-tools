@@ -4,23 +4,26 @@ import * as ts from 'typescript'
 
 /**
  * Given a file, return the list of files it imports as absolute paths.
+ * 
+ * @param file The file to analyze for imports (relative to srcRoot)
+ * @param srcRoot The path to the root of the source code
  */
 export function getImportsForFile(file: string, srcRoot: string) {
   // Follow symlink so directory check works.
-  file = fs.realpathSync(file)
+  let realfile = fs.realpathSync(path.join(srcRoot, file))
 
-  if (fs.lstatSync(file).isDirectory()) {
+  if (fs.lstatSync(realfile).isDirectory()) {
     const index = path.join(file, "index.ts")
     if (fs.existsSync(index)) {
       // https://basarat.gitbooks.io/typescript/docs/tips/barrel.html
-      console.warn(`Warning: Barrel import: ${path.relative(srcRoot, file)}`)
-      file = index
+      console.warn(`Warning: Barrel import: ${file}`)
+      realfile = index
     } else {
-      throw new Error(`Warning: Importing a directory without an index.ts file: ${path.relative(srcRoot, file)}`)
+      throw new Error(`Warning: Importing a directory without an index.ts file: ${file}`)
     }
   }
 
-  const fileInfo = ts.preProcessFile(fs.readFileSync(file).toString());
+  const fileInfo = ts.preProcessFile(fs.readFileSync(realfile).toString());
   return fileInfo.importedFiles
     .map(importedFile => importedFile.fileName)
     // remove svg, css imports
@@ -29,7 +32,7 @@ export function getImportsForFile(file: string, srcRoot: string) {
     .filter(x => /\//.test(x)) // remove node modules (the import must contain '/')
     .map(fileName => {
       if (/(^\.\/)|(^\.\.\/)/.test(fileName)) {
-        return path.join(path.dirname(file), fileName)
+        return path.join(path.dirname(realfile), fileName)
       }
       return path.join(srcRoot, fileName);
     }).map(fileName => {
@@ -46,7 +49,7 @@ export function getImportsForFile(file: string, srcRoot: string) {
         return fileName
       }
       console.warn(`Warning: Unresolved import ${path.relative(srcRoot, fileName)} ` +
-                   `in ${path.relative(srcRoot, file)}`)
+                   `in ${file}`)
       return null
     }).filter(fileName => !!fileName)
 }
