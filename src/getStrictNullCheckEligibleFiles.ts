@@ -1,6 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as glob from 'glob'
+import * as JSON5 from 'json5'
 import { ImportTracker } from './tsHelper'
 import { findCycles } from './findCycles'
 
@@ -103,7 +104,7 @@ interface TSConfig {
  * --strictNullChecks.
  */
 export async function getCheckedFiles(tsconfigPath: string, srcRoot: string): Promise<Set<string>> {
-  const tsconfig = JSON.parse(fs.readFileSync(tsconfigPath).toString()) as TSConfig
+  const tsconfig = JSON5.parse(fs.readFileSync(tsconfigPath).toString()) as TSConfig
 
   const set = new Set<string>();
 

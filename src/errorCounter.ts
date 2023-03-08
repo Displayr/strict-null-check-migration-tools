@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import * as JSON5 from 'json5'
 import { spawn, ChildProcessWithoutNullStreams, execSync } from 'child_process'
 
 const buildCompletePattern = /Found (\d+) errors?\. Watching for file changes\./gi
@@ -15,7 +16,7 @@ export class ErrorCounter {
 
     // Make a copy of tsconfig because we're going to keep modifying it.
     execSync(`cp ${this.tsconfigPath} ${this.tsconfigCopyPath}`)
-    this.originalConfig = JSON.parse(fs.readFileSync(this.tsconfigCopyPath).toString())
+    this.originalConfig = JSON5.parse(fs.readFileSync(this.tsconfigCopyPath).toString())
 
     // Opens TypeScript in watch mode so that it can (hopefully) incrementally
     // compile as we add and remove files from the whitelist.

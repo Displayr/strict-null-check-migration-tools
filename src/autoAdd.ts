@@ -1,5 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import * as JSON5 from 'json5';
 import { listStrictNullCheckEligibleFiles, getCheckedFiles } from './getStrictNullCheckEligibleFiles'
 import { ErrorCounter } from './errorCounter'
 
@@ -44,7 +45,7 @@ async function tryAutoAddStrictNulls() {
 }
 
 function addFileToConfig(relativeFilePath: string) {
-  const config = JSON.parse(fs.readFileSync(tsconfigPath).toString())
+  const config = JSON5.parse(fs.readFileSync(tsconfigPath).toString())
   const path = `./${relativeFilePath}`
   const excludeIndex = config.exclude.indexOf(path)
   if (excludeIndex >= 0) {
