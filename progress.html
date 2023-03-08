@@ -9,7 +9,7 @@
 
 function isTest(node) {
   return node.files.length === 1 &&
-    (node.files[0].endsWith('_test.ts') || node.files[0].endsWith('_test.tsx'))
+    (node.files[0].startsWith('test') || node.files[0].endsWith('test.ts') || node.files[0].endsWith('test.tsx'))
 }
 
 class Tooltip extends React.Component {
