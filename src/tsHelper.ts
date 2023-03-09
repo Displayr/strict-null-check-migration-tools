@@ -10,48 +10,50 @@ import * as ts from 'typescript'
  */
 export function getImportsForFile(file: string, srcRoot: string) {
   // Follow symlink so directory check works.
-  let realfile = fs.realpathSync(path.join(srcRoot, file))
+  let absoluteFile = fs.realpathSync(path.join(srcRoot, file))
 
-  if (fs.lstatSync(realfile).isDirectory()) {
+  if (fs.lstatSync(absoluteFile).isDirectory()) {
     const index = path.join(file, "index.ts")
     if (fs.existsSync(index)) {
       // https://basarat.gitbooks.io/typescript/docs/tips/barrel.html
       console.warn(`Warning: Barrel import: ${file}`)
-      realfile = index
+      absoluteFile = index
     } else {
       throw new Error(`Warning: Importing a directory without an index.ts file: ${file}`)
     }
   }
 
-  const fileInfo = ts.preProcessFile(fs.readFileSync(realfile).toString());
+  const fileInfo = ts.preProcessFile(fs.readFileSync(absoluteFile).toString());
   return fileInfo.importedFiles
     .map(importedFile => importedFile.fileName)
     // remove svg, css imports
     .filter(fileName => !fileName.endsWith(".css") && !fileName.endsWith(".svg") && !fileName.endsWith(".json"))
     .filter(fileName => !fileName.endsWith(".js") && !fileName.endsWith(".jsx")) // Assume .js/.jsx imports have a .d.ts available
     .filter(x => /\//.test(x)) // remove node modules (the import must contain '/')
-    .map(fileName => {
-      if (/(^\.\/)|(^\.\.\/)/.test(fileName)) {
-        return path.join(path.dirname(realfile), fileName)
-      }
-      return path.join(srcRoot, fileName);
-    }).map(fileName => {
-      if (fs.existsSync(`${fileName}.ts`)) {
-        return `${fileName}.ts`
-      }
-      if (fs.existsSync(`${fileName}.tsx`)) {
-        return `${fileName}.tsx`
-      }
-      if (fs.existsSync(`${fileName}.d.ts`)) {
-        return `${fileName}.d.ts`
-      }
-      if (fs.existsSync(`${fileName}`)) {
-        return fileName
-      }
-      console.warn(`Warning: Unresolved import ${path.relative(srcRoot, fileName)} ` +
-                   `in ${file}`)
-      return null
+    .map(moduleName => {
+      const resolvedFile = resolveFile(absoluteFile, moduleName, srcRoot);
+      if (!resolvedFile) 
+        console.warn(`Warning: Unresolved import ${path.relative(srcRoot, moduleName)} in ${file}`)
+      return resolvedFile;
     }).filter(fileName => !!fileName)
+}
+
+function getPath(sourceFile: string, moduleName: string, srcRoot: string): string {
+  if (/(^\.\/)|(^\.\.\/)/.test(moduleName)) {
+    return path.join(path.dirname(sourceFile), moduleName)
+  }
+  return path.join(srcRoot, moduleName)
+}
+
+function resolveFile(sourceFile: string, moduleName: string, srcRoot: string): string | null {
+  const path = getPath(sourceFile, moduleName, srcRoot)
+  const suffixes = [".ts", ".tsx", ".d.ts", ""]
+  for (const suffix of suffixes) {
+    if (fs.existsSync(`${path}${suffix}`)) {
+      return `${path}${suffix}`
+    }
+  }
+  return null
 }
 
 /**
