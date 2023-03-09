@@ -43,6 +43,7 @@ export async function listStrictNullCheckEligibleFiles(
   checkedFiles: Set<string>): Promise<string[]> {
 
   const importsTracker = new ImportTracker(srcRoot)
+  const absoluteCheckedFiles = new Set([...checkedFiles].map(x => normalizePath(fs.realpathSync(path.join(srcRoot, x)))))
 
   const files = await forEachFileInSrc(srcRoot)
   return files
@@ -50,7 +51,7 @@ export async function listStrictNullCheckEligibleFiles(
         if (checkedFiles.has(file)) {
           return false
         }
-        return !hasUncheckedImport(file, importsTracker, checkedFiles)
+        return !hasUncheckedImport(file, importsTracker, absoluteCheckedFiles)
       })
 }
 
@@ -63,6 +64,7 @@ export async function listStrictNullCheckEligibleCycles(
   checkedFiles: Set<string>): Promise<string[][]> {
 
   const importsTracker = new ImportTracker(srcRoot)
+  const absoluteCheckedFiles = new Set([...checkedFiles].map(x => normalizePath(fs.realpathSync(path.join(srcRoot, x)))))
 
   const files = await forEachFileInSrc(srcRoot)
   const cycles = findCycles(srcRoot, files)
@@ -88,7 +90,7 @@ export async function listStrictNullCheckEligibleCycles(
     // All imports of all files in the cycle must have
     // been whitelisted for the cycle to be eligible
     for (const file of files) {
-      if (hasUncheckedImport(file, importsTracker, checkedFiles)) {
+      if (hasUncheckedImport(file, importsTracker, absoluteCheckedFiles)) {
         return false
       }
     }
