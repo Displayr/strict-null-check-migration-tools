@@ -10,7 +10,7 @@ import * as ts from 'typescript'
  */
 export function getImportsForFile(file: string, srcRoot: string) {
   // Follow symlink so directory check works.
-  let absoluteFile = fs.realpathSync(path.join(srcRoot, file))
+  let absoluteFile = fs.realpathSync(path.resolve(srcRoot, file))
 
   if (fs.lstatSync(absoluteFile).isDirectory()) {
     const index = path.join(file, "index.ts")
@@ -39,18 +39,27 @@ export function getImportsForFile(file: string, srcRoot: string) {
 }
 
 function getPath(sourceFile: string, moduleName: string, srcRoot: string): string {
+  // The module name is relative to the source file
   if (/(^\.\/)|(^\.\.\/)/.test(moduleName)) {
     return path.join(path.dirname(sourceFile), moduleName)
   }
   return path.join(srcRoot, moduleName)
 }
 
+/**
+ * Given a source file and a module name, return the absolute path to the file that
+ * exports the module.
+ * 
+ * @param sourceFile An absolute path to a file that contains the import statement
+ * @param moduleName The name of the module being imported
+ * @param srcRoot The path to the root of the source code
+ */
 function resolveFile(sourceFile: string, moduleName: string, srcRoot: string): string | null {
   const path = getPath(sourceFile, moduleName, srcRoot)
   const suffixes = [".ts", ".tsx", ".d.ts", ""]
   for (const suffix of suffixes) {
     if (fs.existsSync(`${path}${suffix}`)) {
-      return `${path}${suffix}`
+      return fs.realpathSync(`${path}${suffix}`)
     }
   }
   return null

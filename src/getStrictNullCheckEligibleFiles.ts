@@ -28,7 +28,7 @@ export function forEachFileInSrc(srcRoot: string): Promise<string[]> {
         return reject(err)
       }
 
-      return resolve(files.filter(considerFile))
+      return resolve(files.filter(considerFile).map(file => path.relative(srcRoot, file)))
     })
   })
 }
@@ -45,7 +45,6 @@ export async function listStrictNullCheckEligibleFiles(
 
   const files = await forEachFileInSrc(srcRoot)
   return files
-      .map(file => path.relative(srcRoot, file))
       .filter(file => {
         if (checkedFiles.has(file)) {
           return false

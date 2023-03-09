@@ -62,8 +62,7 @@ async function findCandidates() {
 }
 
 function toFormattedFilePath(file: string) {
-  // return `"./${path.relative(srcRoot, file)}",`;
-  return `- [ ] \`"./${path.relative(srcRoot, file)}"\``
+  return `- [ ] \`"./${file}"\``
 }
 
 // Input: a map of files to the list of 1st order imports (files directly imported)
