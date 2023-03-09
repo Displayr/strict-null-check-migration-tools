@@ -24,7 +24,7 @@ async function tryAutoAddStrictNulls() {
 
     errorCounter.start()
     for (let i = 0; i < eligibleFiles.length; i++) {
-      const relativeFilePath = path.relative(srcRoot, eligibleFiles[i])
+      const relativeFilePath = eligibleFiles[i]
       console.log(`Trying to auto add '${relativeFilePath}' (file ${i+1}/${eligibleFiles.length})`)
 
       const errorCount = await errorCounter.tryCheckingFile(relativeFilePath)

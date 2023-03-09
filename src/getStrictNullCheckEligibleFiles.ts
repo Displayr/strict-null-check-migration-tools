@@ -4,6 +4,7 @@ import * as glob from 'glob'
 import * as JSON5 from 'json5'
 import { ImportTracker } from './tsHelper'
 import { findCycles } from './findCycles'
+import { normalizePath } from './utils'
 
 function considerFile(file: string): boolean {
   return (file.endsWith('.ts') || file.endsWith('.tsx')) &&
@@ -28,7 +29,7 @@ export function forEachFileInSrc(srcRoot: string): Promise<string[]> {
         return reject(err)
       }
 
-      return resolve(files.filter(considerFile).map(file => path.relative(srcRoot, file)))
+      return resolve(files.filter(considerFile).map(file => normalizePath(path.relative(srcRoot, file))))
     })
   })
 }
@@ -123,7 +124,7 @@ export async function getCheckedFiles(tsconfigPath: string, srcRoot: string): Pr
 
         for (const file of files) {
           if (considerFile(file)) {
-            set.add(path.relative(srcRoot, file))
+            set.add(normalizePath(path.relative(srcRoot, file)))
           }
         }
         resolve()
@@ -139,7 +140,7 @@ export async function getCheckedFiles(tsconfigPath: string, srcRoot: string): Pr
         }
 
         for (const file of files) {
-          set.delete(path.relative(srcRoot, file))
+          set.delete(normalizePath(path.relative(srcRoot, file)))
         }
         resolve()
       })
@@ -148,7 +149,7 @@ export async function getCheckedFiles(tsconfigPath: string, srcRoot: string): Pr
 
   (files || []).forEach(entry => {
     if (considerFile(entry)) {
-      set.add(entry)
+      set.add(normalizePath(entry))
     }
   });
 

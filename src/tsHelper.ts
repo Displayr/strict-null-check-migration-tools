@@ -1,6 +1,7 @@
 import * as path from 'path'
 import * as fs from 'fs'
 import * as ts from 'typescript'
+import { normalizePath } from './utils'
 
 /**
  * Given a file, return the list of files it imports as absolute paths.
@@ -59,7 +60,7 @@ function resolveFile(sourceFile: string, moduleName: string, srcRoot: string): s
   const suffixes = [".ts", ".tsx", ".d.ts", ""]
   for (const suffix of suffixes) {
     if (fs.existsSync(`${path}${suffix}`)) {
-      return fs.realpathSync(`${path}${suffix}`)
+      return normalizePath(fs.realpathSync(`${path}${suffix}`))
     }
   }
   return null
